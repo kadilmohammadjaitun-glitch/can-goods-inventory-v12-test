@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Can Goods Inventory</title>
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f5f1;color:#222}
+.header{background:#176b3a;color:#fff;padding:18px 15px;text-align:center}.header h1{margin:0;font-size:25px}.header p{margin:6px 0;font-size:14px}.user-info{font-size:12px;opacity:.95}
+.container{max-width:850px;margin:auto;padding:15px}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card,.section{background:#fff;border-radius:14px;box-shadow:0 2px 8px #0001}.card{padding:18px}.card h2{margin:0;color:#176b3a;font-size:28px}.card p{margin:5px 0;color:#666}.section{margin-top:15px;padding:18px}.section h3{margin-top:0}
+input,select{width:100%;padding:13px;margin-top:7px;border:1px solid #ccc;border-radius:8px;font-size:16px;background:#fff}label{display:block;margin-top:12px;font-weight:bold}
+button{width:100%;padding:13px;margin-top:10px;border:0;border-radius:8px;background:#176b3a;color:#fff;font-size:16px;font-weight:bold}button:disabled{opacity:.55}.yellow{background:#e6a900}.red{background:#c62828}.blue{background:#1976d2}.gray{background:#666}
+.login-screen{position:fixed;inset:0;background:#176b3a;display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999}.login-box{width:100%;max-width:400px;background:#fff;padding:28px 22px;border-radius:18px;box-shadow:0 5px 25px #0004;text-align:center}.login-icon{font-size:55px}.login-box h2{margin:5px 0;color:#176b3a}.login-subtitle{color:#777}.password-wrap{position:relative}.password-wrap button{position:absolute;right:5px;top:7px;width:45px;margin:0;padding:9px;background:transparent;color:#555}#loginMessage{margin-top:15px;font-size:14px;font-weight:bold}.logout{max-width:180px;margin:10px auto 0;background:#555}
+.camera-wrap{position:relative;background:#000;border-radius:12px;overflow:hidden;margin-top:10px;display:none}#camera{width:100%;max-height:420px;display:block;object-fit:cover}.scan-frame{position:absolute;left:12%;right:12%;top:25%;bottom:25%;border:3px solid #00ff66;border-radius:12px}.scan-line{position:absolute;left:12%;right:12%;top:25%;height:3px;background:red;animation:scan 2s linear infinite}@keyframes scan{0%{top:25%}50%{top:75%}100%{top:25%}}.camera-msg{position:absolute;bottom:0;width:100%;background:#000a;color:#fff;text-align:center;padding:8px;font-size:13px}.camera-status{text-align:center;background:#f5f5f5;padding:9px;margin-top:8px;border-radius:8px;font-size:13px}
+#result{display:none;margin-top:15px;padding:15px;background:#eef7ef;border-radius:10px}.error{color:#c62828;font-weight:bold}.warning{color:#9a6900;font-weight:bold}.success{color:#176b3a;font-weight:bold}
+.product{background:#fafafa;border:1px solid #ddd;border-radius:12px;padding:12px;margin-top:12px}.product-image{width:100%;max-height:180px;object-fit:contain;border-radius:8px;background:#eee}.product-name{font-size:18px;font-weight:bold;color:#176b3a}.product-info{font-size:14px;line-height:1.6;margin-top:5px}.status{display:inline-block;padding:5px 9px;border-radius:6px;font-size:13px;font-weight:bold;margin-top:5px}.status-in{background:#d8f3dc;color:#176b3a}.status-low{background:#fff0c2;color:#9a6900}.status-out{background:#ffd9d9;color:#c62828}.product-buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px}.product-buttons button{font-size:13px;padding:10px}
+.history-row{border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:10px;background:#fafafa}.history-in{color:#176b3a;font-weight:bold}.history-out{color:#c62828;font-weight:bold}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:15px;z-index:1000}.modal-box{background:#fff;width:100%;max-width:520px;max-height:90vh;overflow:auto;border-radius:15px;padding:20px}.empty,.loading{text-align:center;color:#777;padding:20px}
+.report-summary{background:#eef7ef;border-radius:10px;padding:13px;margin-top:15px;line-height:1.8}.report-table-wrap{width:100%;overflow-x:auto;margin-top:12px}.report-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}.report-table th,.report-table td{border:1px solid #ddd;padding:8px;text-align:left;white-space:nowrap}.report-table th{background:#176b3a;color:#fff}.report-table tr:nth-child(even){background:#f8f8f8}.report-empty{text-align:center;padding:20px;color:#777}.report-title{font-size:20px;font-weight:bold;color:#176b3a;margin-top:10px}.report-note{font-size:12px;color:#777;margin-top:5px}
+.role-badge{display:inline-block;padding:4px 9px;border-radius:20px;background:#fff;color:#176b3a;font-weight:bold;margin-top:5px}
+.staff-monitor-row{border:1px solid #ddd;border-radius:10px;padding:12px;margin-top:10px;background:#fafafa}
+.activity-online{display:inline-block;padding:5px 9px;border-radius:6px;background:#d8f3dc;color:#176b3a;font-weight:bold}
+.activity-offline{display:inline-block;padding:5px 9px;border-radius:6px;background:#ffd9d9;color:#c62828;font-weight:bold}
+.activity-idle{display:inline-block;padding:5px 9px;border-radius:6px;background:#fff0c2;color:#9a6900;font-weight:bold}
+.hidden{display:none!important}.page-hidden{display:none!important}.main-nav{display:flex;gap:8px;overflow-x:auto;padding:10px 15px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:900;scrollbar-width:none}.main-nav::-webkit-scrollbar{display:none}.nav-btn{width:auto;min-width:max-content;margin:0;padding:10px 14px;background:#f2f4f2;color:#333;border:1px solid #ddd;border-radius:20px;font-size:14px}.nav-btn.active{background:#176b3a;color:#fff;border-color:#176b3a}.page-title{font-size:20px;font-weight:bold;color:#176b3a;margin:18px 0 5px}.page-subtitle{font-size:13px;color:#777;margin:0 0 10px}@media(min-width:600px){.cards{grid-template-columns:repeat(4,1fr)}}@media(max-width:599px){.report-table{font-size:11px}.report-table th,.report-table td{padding:7px}}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-screen">
+<div class="login-box">
+<div class="login-icon">🥫</div><h2>Can Goods Inventory</h2><p class="login-subtitle">Please login to continue</p>
+<label>Email</label><input id="loginEmail" type="email" placeholder="Enter your email">
+<label>Password</label><div class="password-wrap"><input id="loginPassword" type="password" placeholder="Enter your password"><button type="button" onclick="togglePassword()">👁️</button></div>
+<button id="loginButton" onclick="loginUser()">🔐 LOGIN</button><div id="loginMessage"></div>
+</div></div>
+
+<div id="app" style="display:none">
+<div class="header">
+<h1>🥫 Can Goods Inventory</h1><p>Inventory Management System</p>
+<div id="userInfo" class="user-info"></div><div id="roleInfo" class="role-badge"></div>
+<button class="logout" onclick="logoutUser()">🚪 LOGOUT</button>
+</div>
+
+<div class="main-nav" id="mainNav">
+<button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard')">🏠 Dashboard</button>
+<button class="nav-btn" data-page="scanner" onclick="showPage('scanner')">📷 Scanner</button>
+<button class="nav-btn" data-page="products" onclick="showPage('products')">📦 Products</button>
+<button class="nav-btn" data-page="history" onclick="showPage('history')">📋 History</button>
+<button class="nav-btn" data-page="reports" onclick="showPage('reports')">📊 Reports</button>
+<button class="nav-btn hidden" id="adminNavButton" data-page="admin" onclick="showPage('admin')">⚙️ Admin</button>
+</div>
+
+<div class="container">
+<div id="dashboardPage" class="page-section">
+<div class="page-title">🏠 Dashboard</div><p class="page-subtitle">Inventory overview and quick status.</p>
+<div class="cards">
+<div class="card"><h2 id="productsCount">0</h2><p>Products</p></div>
+<div class="card"><h2 id="stockCount">0</h2><p>Total Stock</p></div>
+<div class="card"><h2 id="lowStockCount">0</h2><p>Low Stock</p></div>
+<div class="card"><h2 id="outStockCount">0</h2><p>Out of Stock</p></div>
+</div>
+</div>
+
+<div id="scannerSection" class="section page-section page-hidden">
+<h3>📷 Barcode Scanner</h3>
+<div id="cameraWrap" class="camera-wrap"><video id="camera" autoplay muted playsinline></video><div class="scan-frame"></div><div class="scan-line"></div><div class="camera-msg">Place barcode inside the green box</div></div>
+<div id="cameraStatus" class="camera-status">Camera is stopped.</div>
+<button class="yellow" onclick="startScanner()">📷 START SCANNER</button><button id="stopButton" class="red" onclick="stopScanner()" style="display:none">⛔ STOP CAMERA</button>
+<label>Barcode</label><input id="barcode" inputmode="numeric" placeholder="Scan or enter barcode"><button onclick="searchBarcode()">🔍 SEARCH BARCODE</button><div id="result"></div>
+</div>
+
+<div id="productManagementSection" class="section page-section page-hidden">
+<h3>📦 Product Management</h3><button id="addProductButton" onclick="openAddModal()">➕ ADD NEW PRODUCT</button>
+</div>
+
+<div id="productListSection" class="section page-section page-hidden">
+<h3>📋 Product List</h3><input id="productSearch" placeholder="🔎 Search product, brand or barcode" oninput="filterProducts()"><div id="productList"><div class="loading">Loading products...</div></div>
+</div>
+
+<div id="historySection" class="section page-section page-hidden">
+<h3>📋 Stock History</h3><button class="blue" onclick="loadHistory()">🔄 REFRESH HISTORY</button><div id="historyList"><div class="loading">Loading stock history...</div></div>
+</div>
+
+<div id="reportsSection" class="section page-section page-hidden">
+<h3>📊 Reports & Export</h3>
+<label>Report Type</label><select id="reportType" onchange="generateReport()"><option value="inventory">📦 Inventory Report</option><option value="history">🧾 Stock Movement Report</option></select>
+<label>Search Report</label><input id="reportSearch" placeholder="🔎 Search product, barcode or brand" oninput="generateReport()">
+<div id="dateFilters"><label>From Date</label><input id="reportFromDate" type="date" onchange="generateReport()"><label>To Date</label><input id="reportToDate" type="date" onchange="generateReport()"></div>
+<button class="blue" onclick="generateReport()">🔄 GENERATE REPORT</button><button onclick="printReport()">🖨️ PRINT REPORT</button><button class="yellow" onclick="exportReportCSV()">📥 EXPORT CSV</button>
+<div id="reportSummary"></div><div id="reportResult"><div class="loading">Generate a report to display results.</div></div>
+</div>
+
+<div id="adminPage" class="page-section page-hidden">
+<div id="staffMonitoringSection" class="section hidden">
+<h3>👥 STAFF MONITORING</h3>
+<p style="font-size:13px;color:#666">ADMIN only. Staff activity is updated automatically while the system is active.</p>
+<button class="blue" onclick="loadStaffMonitoring()">🔄 REFRESH STAFF STATUS</button>
+<div id="staffMonitoringList"><div class="loading">Loading staff status...</div></div>
+</div>
+
+<div id="userManagementSection" class="section hidden">
+<h3>👥 User Role Management</h3>
+<p style="font-size:13px;color:#666">ADMIN only. Enter an existing Supabase Auth User UID and email.</p>
+<label>User UID</label><input id="roleUserId" placeholder="Paste Supabase User UID">
+<label>User Email</label><input id="roleUserEmail" type="email" placeholder="User email">
+<label>Role</label><select id="roleUserRole"><option value="STAFF">👷 STAFF</option><option value="VIEWER">👁️ VIEWER</option><option value="ADMIN">👑 ADMIN</option></select>
+<button class="blue" onclick="saveUserRole()">💾 SAVE USER ROLE</button><div id="roleMessage"></div>
+<div id="roleList" style="margin-top:15px"></div>
+</div>
+</div></div>
+
+<div id="productModal" class="modal"><div class="modal-box">
+<h2 id="modalTitle">➕ Add Product</h2><input type="hidden" id="editProductId">
+<label>Barcode *</label><input id="formBarcode" inputmode="numeric" placeholder="Barcode number">
+<label>Product Name *</label><input id="formProductName" placeholder="Example: Mega Sardines">
+<label>Brand</label><input id="formBrand" placeholder="Example: Mega">
+<label>Category</label><input id="formCategory" placeholder="Example: Sardines">
+<label>Unit</label><input id="formUnit" placeholder="Example: can">
+<label>Stock</label><input id="formStock" type="number" min="0" value="0">
+<label>Minimum Stock</label><input id="formMinimumStock" type="number" min="0" value="5">
+<label>Price</label><input id="formPrice" type="number" min="0" step="0.01" value="0">
+<label>Product Image URL</label><input id="formImage" placeholder="https://example.com/image.jpg">
+<button onclick="saveProduct()">💾 SAVE PRODUCT</button><button class="gray" onclick="closeModal()">✖ CLOSE</button>
+</div></div>
+
+<div id="stockModal" class="modal"><div class="modal-box">
+<h2 id="stockModalTitle">📦 Stock</h2><input type="hidden" id="stockProductId"><label>Quantity</label><input id="stockQuantity" type="number" min="1" value="1">
+<button id="stockConfirmButton" onclick="confirmStock()">CONFIRM</button><button class="gray" onclick="closeStockModal()">✖ CANCEL</button>
+</div></div>
+
+<script>
+const SUPABASE_URL='https://xemdlccejsdoglczepsm.supabase.co';
+const SUPABASE_KEY='sb_publishable_uXDEsaRgAPdwnLrcTjAj4A_j88ihGi4';
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let codeReader=null,productsData=[],historyData=[],stockAction="",scannerRunning=false,scanLocked=false,currentUser=null,currentRole=null;
+let activityHeartbeat=null;
+
+document.addEventListener("DOMContentLoaded",checkLogin);
+supabaseClient.auth.onAuthStateChange((event,session)=>{if(session) showApp(session); else showLogin();});
+
+async function checkLogin(){const {data:{session}}=await supabaseClient.auth.getSession();if(session) await showApp(session);else showLogin();}
+
+async function updateMyActivity(){
+if(!currentUser)return;
+try{const {error}=await supabaseClient.rpc("update_my_activity");if(error)console.warn("Activity heartbeat:",error.message);}
+catch(e){console.warn("Activity heartbeat:",e);}
+}
+function startActivityHeartbeat(){
+stopActivityHeartbeat();
+updateMyActivity();
+activityHeartbeat=setInterval(()=>{updateMyActivity();if(currentRole==="ADMIN")loadStaffMonitoring();},60000);
+}
+function stopActivityHeartbeat(){
+if(activityHeartbeat){clearInterval(activityHeartbeat);activityHeartbeat=null;}
+}
+async function setMyOffline(){
+if(!currentUser)return;
+try{await supabaseClient.rpc("set_my_offline");}catch(e){console.warn("Offline update:",e);}
+}
+function activityStatus(lastSeen,isOnline){
+if(!lastSeen)return{text:"🔴 OFFLINE",className:"activity-offline"};
+const age=Date.now()-new Date(lastSeen).getTime();
+if(age<=150000&&isOnline)return{text:"🟢 ONLINE",className:"activity-online"};
+if(age<=300000)return{text:"🟡 IDLE",className:"activity-idle"};
+return{text:"🔴 OFFLINE",className:"activity-offline"};
+}
+async function loadStaffMonitoring(){
+if(currentRole!=="ADMIN")return;
+const list=document.getElementById("staffMonitoringList");
+if(!list)return;
+list.innerHTML='<div class="loading">Loading staff status...</div>';
+const {data,error}=await supabaseClient.from("user_activity").select("user_id,email,role,is_online,last_seen,updated_at").eq("role","STAFF").order("last_seen",{ascending:false});
+if(error){list.innerHTML='<div class="error">❌ '+escapeHTML(error.message)+'</div>';return;}
+if(!data||!data.length){list.innerHTML='<div class="empty">👷 No STAFF activity records yet.</div>';return;}
+list.innerHTML="";
+data.forEach(u=>{
+const status=activityStatus(u.last_seen,u.is_online);
+const last=u.last_seen?new Date(u.last_seen).toLocaleString():"Never";
+const div=document.createElement("div");
+div.className="staff-monitor-row";
+div.innerHTML='<strong>👷 '+escapeHTML(u.email||"-")+'</strong><br><small>Role: STAFF</small><br><br><span class="'+status.className+'">'+status.text+'</span><br><strong>🕐 Last Seen:</strong> '+escapeHTML(last);
+list.appendChild(div);
+});
+}
+
+function showLogin(){stopScanner();stopActivityHeartbeat();document.getElementById("loginScreen").style.display="flex";document.getElementById("app").style.display="none";}
+
+async function showApp(session){
+currentUser=session.user;
+const {data:roleRow,error}=await supabaseClient.from("user_roles").select("role").eq("user_id",session.user.id).maybeSingle();
+if(error||!roleRow){await supabaseClient.auth.signOut();showLogin();document.getElementById("loginMessage").innerHTML='<span class="error">❌ No user role assigned. Ask an ADMIN to assign your role.</span>';return;}
+currentRole=roleRow.role;
+document.getElementById("loginScreen").style.display="none";document.getElementById("app").style.display="block";
+document.getElementById("userInfo").textContent="Logged in as: "+(session.user.email||"User");
+document.getElementById("roleInfo").textContent=(currentRole==="ADMIN"?"👑 ADMIN":currentRole==="STAFF"?"👷 STAFF":"👁️ VIEWER");
+applyPermissions();
+await loadProducts();await loadHistory();if(currentRole==="ADMIN"){await loadRoleList();await loadStaffMonitoring();}startActivityHeartbeat();
+}
+
+function showPage(page){
+const pages={dashboard:["dashboardPage"],scanner:["scannerSection"],products:["productManagementSection","productListSection"],history:["historySection"],reports:["reportsSection"],admin:["adminPage"]};
+document.querySelectorAll(".page-section").forEach(el=>el.classList.add("page-hidden"));
+(pages[page]||pages.dashboard).forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("page-hidden");});
+document.querySelectorAll(".nav-btn[data-page]").forEach(btn=>btn.classList.toggle("active",btn.dataset.page===page));
+if(page==="scanner"){document.getElementById("barcode")?.focus();}
+if(page==="history")loadHistory();
+if(page==="reports")generateReport();
+if(page==="admin"&&currentRole==="ADMIN")loadStaffMonitoring();
+window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function applyPermissions(){
+const admin=currentRole==="ADMIN",staff=currentRole==="STAFF",canStock=admin||staff;
+document.getElementById("addProductButton").style.display=admin?"block":"none";
+document.getElementById("productManagementSection").style.display=admin?"block":"none";
+document.getElementById("userManagementSection").classList.toggle("hidden",!admin);
+document.getElementById("staffMonitoringSection").classList.toggle("hidden",!admin);
+document.getElementById("adminNavButton").classList.toggle("hidden",!admin);
+document.querySelectorAll('[onclick^="openStockModal"]').forEach(b=>b.style.display=canStock?"block":"none");
+if(!admin){document.getElementById("adminPage").classList.add("page-hidden");if(document.querySelector(".nav-btn[data-page=\"admin\"]"))document.querySelector(".nav-btn[data-page=\"admin\"]").classList.remove("active");}
+showPage("dashboard");
+}
+
+async function loginUser(){
+const email=document.getElementById("loginEmail").value.trim(),password=document.getElementById("loginPassword").value,button=document.getElementById("loginButton"),message=document.getElementById("loginMessage");
+if(!email||!password){message.innerHTML='<span class="error">⚠️ Please enter email and password.</span>';return;}
+button.disabled=true;button.textContent="🔄 LOGGING IN...";message.textContent="";
+const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+button.disabled=false;button.textContent="🔐 LOGIN";
+if(error){message.innerHTML='<span class="error">❌ Login failed.<br>'+escapeHTML(error.message)+'</span>';return;}
+if(data.session) await showApp(data.session);
+}
+async function logoutUser(){stopScanner();stopActivityHeartbeat();await setMyOffline();await supabaseClient.auth.signOut();showLogin();}
+function togglePassword(){const i=document.getElementById("loginPassword");i.type=i.type==="password"?"text":"password";}
+
+async function loadProducts(){
+const list=document.getElementById("productList");list.innerHTML='<div class="loading">Loading products...</div>';
+const {data,error}=await supabaseClient.from("products").select("*").order("created_at",{ascending:false});
+if(error){list.innerHTML='<div class="error">❌ '+escapeHTML(error.message)+'</div>';return;}
+productsData=data||[];updateDashboard();displayProducts(productsData);
+}
+function updateDashboard(){let total=0,low=0,out=0;productsData.forEach(p=>{let s=Number(p.stock||0),m=Number(p.minimum_stock||0);total+=s;if(s===0)out++;else if(s<=m)low++;});document.getElementById("productsCount").textContent=productsData.length;document.getElementById("stockCount").textContent=total;document.getElementById("lowStockCount").textContent=low;document.getElementById("outStockCount").textContent=out;}
+function getStatus(p){let s=Number(p.stock||0),m=Number(p.minimum_stock||0);if(s===0)return{text:"🔴 OUT OF STOCK",class:"status-out"};if(s<=m)return{text:"🟡 LOW STOCK",class:"status-low"};return{text:"🟢 IN STOCK",class:"status-in"};}
+
+function productButtons(p){
+let canStock=currentRole==="ADMIN"||currentRole==="STAFF";
+return '<div class="product-buttons">'+
+(canStock?'<button class="blue" onclick="openStockModal('+p.id+',\'in\')">📥 STOCK IN</button>':'')+
+(canStock?'<button class="red" onclick="openStockModal('+p.id+',\'out\')">📤 STOCK OUT</button>':'')+
+(currentRole==="ADMIN"?'<button onclick="editProduct('+p.id+')">✏️ EDIT</button>':'')+
+'</div>';
+}
+function displayProducts(products){
+const list=document.getElementById("productList");if(!products.length){list.innerHTML='<div class="empty">📦 No products found.</div>';return;}list.innerHTML="";
+products.forEach(p=>{const s=getStatus(p),div=document.createElement("div");div.className="product";let image=p.image?'<img class="product-image" src="'+escapeHTML(p.image)+'" onerror="this.style.display=\'none\'">':"";
+div.innerHTML=image+'<div class="product-name">'+escapeHTML(p.product_name||"-")+'</div><div class="product-info"><strong>Barcode:</strong> '+escapeHTML(p.barcode||"-")+'<br><strong>Brand:</strong> '+escapeHTML(p.brand||"-")+'<br><strong>Category:</strong> '+escapeHTML(p.category||"-")+'<br><strong>Unit:</strong> '+escapeHTML(p.unit||"-")+'<br><strong>Stock:</strong> '+Number(p.stock||0)+'<br><strong>Minimum:</strong> '+Number(p.minimum_stock||0)+'<br><strong>Price:</strong> ₱'+Number(p.price||0).toFixed(2)+'<br><span class="status '+s.class+'">'+s.text+'</span></div>'+productButtons(p);list.appendChild(div);});
+}
+function filterProducts(){const q=document.getElementById("productSearch").value.toLowerCase().trim();displayProducts(!q?productsData:productsData.filter(p=>[p.barcode,p.product_name,p.brand,p.category].some(v=>String(v||"").toLowerCase().includes(q))));}
+
+async function startScanner(){
+if(scannerRunning)return;const video=document.getElementById("camera"),wrap=document.getElementById("cameraWrap"),stop=document.getElementById("stopButton"),status=document.getElementById("cameraStatus"),result=document.getElementById("result");result.style.display="block";result.innerHTML="📷 Requesting camera permission...";status.textContent="📷 Starting camera...";scanLocked=false;
+try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});stream.getTracks().forEach(t=>t.stop());codeReader=new ZXing.BrowserMultiFormatReader();wrap.style.display="block";stop.style.display="block";scannerRunning=true;status.textContent="📷 Camera active — scan a barcode.";result.innerHTML="🔎 Looking for barcode...";
+await codeReader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}},video,(scanResult)=>{if(scanResult&&!scanLocked){scanLocked=true;document.getElementById("barcode").value=scanResult.getText();result.innerHTML='<span class="success">✅ Barcode detected!<br>'+escapeHTML(scanResult.getText())+'</span>';setTimeout(()=>{stopScanner();searchBarcode();},400);}});
+}catch(error){scannerRunning=false;if(codeReader){try{codeReader.reset()}catch(e){}codeReader=null;}wrap.style.display="none";stop.style.display="none";status.textContent="❌ Camera stopped.";let msg="❌ Camera could not start.";if(error.name==="NotAllowedError")msg="❌ Camera permission was denied. Please allow camera permission in Chrome.";else if(error.name==="NotFoundError")msg="❌ No camera was found.";else if(error.name==="NotReadableError")msg="❌ Camera is being used by another app.";else msg="❌ Camera error:<br>"+escapeHTML(error.message||String(error));result.innerHTML='<span class="error">'+msg+'</span>';}}
+function stopScanner(){scannerRunning=false;scanLocked=false;if(codeReader){try{codeReader.reset()}catch(e){}codeReader=null;}const video=document.getElementById("camera");if(video&&video.srcObject){try{video.srcObject.getTracks().forEach(t=>t.stop())}catch(e){}video.srcObject=null;}document.getElementById("cameraWrap").style.display="none";document.getElementById("stopButton").style.display="none";document.getElementById("cameraStatus").textContent="Camera is stopped.";}
+
+async function searchBarcode(){
+const barcode=document.getElementById("barcode").value.trim(),result=document.getElementById("result");if(!barcode){result.style.display="block";result.innerHTML='<span class="error">⚠️ Please enter a barcode.</span>';return;}result.style.display="block";result.innerHTML="🔎 Searching inventory...";
+const {data,error}=await supabaseClient.from("products").select("*").eq("barcode",barcode).maybeSingle();if(error){result.innerHTML='<span class="error">❌ '+escapeHTML(error.message)+'</span>';return;}if(!data){result.innerHTML='<span class="warning">⚠️ Product not found.</span><br><br><strong>Barcode:</strong> '+escapeHTML(barcode);return;}showSearchResult(data);
+}
+function showSearchResult(p){const result=document.getElementById("result"),s=getStatus(p);let image=p.image?'<br><img class="product-image" src="'+escapeHTML(p.image)+'">':"";let actions=(currentRole==="ADMIN"||currentRole==="STAFF")?'<button class="blue" onclick="openStockModal('+p.id+',\'in\')">📥 STOCK IN</button><button class="red" onclick="openStockModal('+p.id+',\'out\')">📤 STOCK OUT</button>':"";if(currentRole==="ADMIN")actions+='<button onclick="editProduct('+p.id+')">✏️ EDIT PRODUCT</button>';result.innerHTML='<div class="product-name">'+escapeHTML(p.product_name||"-")+'</div>'+image+'<br><strong>Barcode:</strong> '+escapeHTML(p.barcode||"-")+'<br><strong>Brand:</strong> '+escapeHTML(p.brand||"-")+'<br><strong>Category:</strong> '+escapeHTML(p.category||"-")+'<br><strong>Stock:</strong> '+Number(p.stock||0)+'<br><strong>Minimum:</strong> '+Number(p.minimum_stock||0)+'<br><strong>Price:</strong> ₱'+Number(p.price||0).toFixed(2)+'<br><span class="status '+s.class+'">'+s.text+'</span>'+actions;}
+
+function openAddModal(){if(currentRole!=="ADMIN")return alert("ADMIN only.");document.getElementById("modalTitle").textContent="➕ Add Product";["editProductId","formBarcode","formProductName","formBrand","formCategory","formUnit","formImage"].forEach(id=>document.getElementById(id).value="");document.getElementById("formStock").value=0;document.getElementById("formMinimumStock").value=5;document.getElementById("formPrice").value=0;document.getElementById("productModal").style.display="flex";}
+function closeModal(){document.getElementById("productModal").style.display="none";}
+async function saveProduct(){
+if(currentRole!=="ADMIN")return alert("ADMIN only.");const id=document.getElementById("editProductId").value;
+const product={barcode:document.getElementById("formBarcode").value.trim(),product_name:document.getElementById("formProductName").value.trim(),brand:document.getElementById("formBrand").value.trim(),category:document.getElementById("formCategory").value.trim(),unit:document.getElementById("formUnit").value.trim(),stock:Number(document.getElementById("formStock").value||0),minimum_stock:Number(document.getElementById("formMinimumStock").value||0),price:Number(document.getElementById("formPrice").value||0),image:document.getElementById("formImage").value.trim()};
+if(!product.barcode||!product.product_name)return alert("Please enter Barcode and Product Name.");
+let response=id?await supabaseClient.from("products").update(product).eq("id",id):await supabaseClient.from("products").insert([product]);
+if(response.error)return alert("❌ Error:\n\n"+response.error.message);alert(id?"✅ Product updated!":"✅ Product added!");closeModal();await loadProducts();
+}
+function editProduct(id){if(currentRole!=="ADMIN")return alert("ADMIN only.");const p=productsData.find(x=>x.id==id);if(!p)return;document.getElementById("modalTitle").textContent="✏️ Edit Product";document.getElementById("editProductId").value=p.id;document.getElementById("formBarcode").value=p.barcode||"";document.getElementById("formProductName").value=p.product_name||"";document.getElementById("formBrand").value=p.brand||"";document.getElementById("formCategory").value=p.category||"";document.getElementById("formUnit").value=p.unit||"";document.getElementById("formStock").value=p.stock||0;document.getElementById("formMinimumStock").value=p.minimum_stock||0;document.getElementById("formPrice").value=p.price||0;document.getElementById("formImage").value=p.image||"";document.getElementById("productModal").style.display="flex";}
+
+function openStockModal(id,action){if(currentRole!=="ADMIN"&&currentRole!=="STAFF")return alert("You do not have permission.");const p=productsData.find(x=>x.id==id);if(!p)return;stockAction=action;document.getElementById("stockProductId").value=id;document.getElementById("stockQuantity").value=1;document.getElementById("stockModalTitle").textContent=(action==="in"?"📥 Stock In - ":"📤 Stock Out - ")+p.product_name;const b=document.getElementById("stockConfirmButton");b.textContent=action==="in"?"📥 CONFIRM STOCK IN":"📤 CONFIRM STOCK OUT";b.className=action==="in"?"blue":"red";document.getElementById("stockModal").style.display="flex";}
+function closeStockModal(){document.getElementById("stockModal").style.display="none";}
+
+async function confirmStock(){
+if(currentRole!=="ADMIN"&&currentRole!=="STAFF")return alert("You do not have permission.");
+const id=Number(document.getElementById("stockProductId").value),quantity=Number(document.getElementById("stockQuantity").value||0);if(quantity<=0)return alert("Enter a valid quantity.");
+const action=stockAction==="in"?"STOCK IN":"STOCK OUT";const {data,error}=await supabaseClient.rpc("adjust_stock",{p_product_id:id,p_action:action,p_quantity:quantity});
+if(error)return alert("❌ Stock update failed:\n\n"+error.message);
+alert("✅ Stock updated!\n\nProduct: "+(data.product_name||"")+"\\nAction: "+action+"\\nQuantity: "+quantity+"\\nNew stock: "+data.stock_after);
+closeStockModal();await loadProducts();await loadHistory();const barcode=document.getElementById("barcode").value.trim();if(barcode)searchBarcode();
+}
+
+async function loadHistory(){
+const list=document.getElementById("historyList");list.innerHTML='<div class="loading">Loading stock history...</div>';const {data,error}=await supabaseClient.from("stock_history").select("*").order("created_at",{ascending:false}).limit(100);if(error){list.innerHTML='<div class="error">❌ History error<br><br>'+escapeHTML(error.message)+'</div>';return;}historyData=data||[];if(!historyData.length){list.innerHTML='<div class="empty">📋 No stock transactions yet.</div>';return;}list.innerHTML="";historyData.forEach(h=>{const div=document.createElement("div"),date=h.created_at?new Date(h.created_at).toLocaleString():"-",isIn=h.action==="STOCK IN";div.className="history-row";div.innerHTML='<strong>'+escapeHTML(h.product_name||"-")+'</strong><br><small>'+escapeHTML(date)+'</small><br><br><span class="'+(isIn?"history-in":"history-out")+'">'+(isIn?"📥 STOCK IN":"📤 STOCK OUT")+'</span><br><strong>Barcode:</strong> '+escapeHTML(h.barcode||"-")+'<br><strong>Quantity:</strong> '+Number(h.quantity||0)+'<br><strong>Stock Before:</strong> '+Number(h.stock_before||0)+'<br><strong>Stock After:</strong> '+Number(h.stock_after||0)+'<br><strong>User:</strong> '+escapeHTML(h.user_email||"-");list.appendChild(div);});}
+
+function getReportSearch(){return document.getElementById("reportSearch").value.toLowerCase().trim();}
+function isDateInRange(dateString,from,to){if(!dateString)return false;const day=new Date(dateString).toISOString().substring(0,10);return !((from&&day<from)||(to&&day>to));}
+function generateReport(){const type=document.getElementById("reportType").value,search=getReportSearch(),from=document.getElementById("reportFromDate").value,to=document.getElementById("reportToDate").value;if(from&&to&&from>to){document.getElementById("reportSummary").innerHTML='<div class="error">⚠️ From Date cannot be later than To Date.</div>';document.getElementById("reportResult").innerHTML="";return;}type==="inventory"?generateInventoryReport(search):generateHistoryReport(search,from,to);}
+function generateInventoryReport(search){let rows=productsData.filter(p=>!search||[p.product_name,p.barcode,p.brand,p.category].some(v=>String(v||"").toLowerCase().includes(search))),total=0,low=0,out=0;rows.forEach(p=>{let s=Number(p.stock||0),m=Number(p.minimum_stock||0);total+=s;if(s===0)out++;else if(s<=m)low++;});document.getElementById("reportSummary").innerHTML='<div class="report-summary"><strong>📦 INVENTORY SUMMARY</strong><br>Products: '+rows.length+'<br>Total Stock: '+total+'<br>Low Stock: '+low+'<br>Out of Stock: '+out+'</div>';if(!rows.length){document.getElementById("reportResult").innerHTML='<div class="report-empty">📦 No products found.</div>';return;}let html='<div class="report-title">📦 Inventory Report</div><div class="report-note">Generated: '+new Date().toLocaleString()+'</div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>#</th><th>Product</th><th>Barcode</th><th>Brand</th><th>Category</th><th>Unit</th><th>Stock</th><th>Minimum</th><th>Price</th><th>Status</th></tr></thead><tbody>';rows.forEach((p,i)=>{let s=getStatus(p);html+='<tr><td>'+(i+1)+'</td><td>'+escapeHTML(p.product_name||"-")+'</td><td>'+escapeHTML(p.barcode||"-")+'</td><td>'+escapeHTML(p.brand||"-")+'</td><td>'+escapeHTML(p.category||"-")+'</td><td>'+escapeHTML(p.unit||"-")+'</td><td>'+Number(p.stock||0)+'</td><td>'+Number(p.minimum_stock||0)+'</td><td>₱'+Number(p.price||0).toFixed(2)+'</td><td>'+escapeHTML(s.text)+'</td></tr>';});html+='</tbody></table></div>';document.getElementById("reportResult").innerHTML=html;}
+function generateHistoryReport(search,from,to){let rows=historyData.filter(h=>isDateInRange(h.created_at,from,to)&&(!search||[h.product_name,h.barcode,h.user_email,h.action].some(v=>String(v||"").toLowerCase().includes(search)))),tin=0,tout=0;rows.forEach(h=>{let q=Number(h.quantity||0);if(h.action==="STOCK IN")tin+=q;else tout+=q;});document.getElementById("reportSummary").innerHTML='<div class="report-summary"><strong>🧾 STOCK MOVEMENT SUMMARY</strong><br>Transactions: '+rows.length+'<br>Total Stock In: '+tin+'<br>Total Stock Out: '+tout+'</div>';if(!rows.length){document.getElementById("reportResult").innerHTML='<div class="report-empty">🧾 No stock movement found.</div>';return;}let html='<div class="report-title">🧾 Stock Movement Report</div><div class="report-note">Generated: '+new Date().toLocaleString()+'</div><div class="report-table-wrap"><table class="report-table"><thead><tr><th>#</th><th>Date / Time</th><th>Product</th><th>Barcode</th><th>Action</th><th>Quantity</th><th>Before</th><th>After</th><th>User</th></tr></thead><tbody>';rows.forEach((h,i)=>{html+='<tr><td>'+(i+1)+'</td><td>'+escapeHTML(h.created_at?new Date(h.created_at).toLocaleString():"-")+'</td><td>'+escapeHTML(h.product_name||"-")+'</td><td>'+escapeHTML(h.barcode||"-")+'</td><td>'+escapeHTML(h.action||"-")+'</td><td>'+Number(h.quantity||0)+'</td><td>'+Number(h.stock_before||0)+'</td><td>'+Number(h.stock_after||0)+'</td><td>'+escapeHTML(h.user_email||"-")+'</td></tr>';});html+='</tbody></table></div>';document.getElementById("reportResult").innerHTML=html;}
+
+function printReport(){const report=document.getElementById("reportResult").innerHTML,summary=document.getElementById("reportSummary").innerHTML;if(!report||report.includes("Generate a report"))return alert("Please generate a report first.");const w=window.open("","_blank");if(!w)return alert("⚠️ Please allow pop-ups in Chrome to print the report.");w.document.write('<html><head><title>Can Goods Inventory Report</title><style>body{font-family:Arial;padding:20px}h1{color:#176b3a;text-align:center}.summary{margin-bottom:15px;padding:12px;border:1px solid #ddd}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #999;padding:6px;text-align:left}th{background:#176b3a;color:white}</style></head><body><h1>🥫 Can Goods Inventory</h1><div class="summary">'+summary+'</div>'+report+'</body></html>');w.document.close();w.focus();setTimeout(()=>w.print(),500);}
+function csvEscape(v){return '"'+String(v??"").replace(/"/g,'""')+'"';}
+function exportReportCSV(){const type=document.getElementById("reportType").value,search=getReportSearch(),from=document.getElementById("reportFromDate").value,to=document.getElementById("reportToDate").value;let csv="";if(type==="inventory"){let rows=productsData.filter(p=>!search||[p.product_name,p.barcode,p.brand,p.category].some(v=>String(v||"").toLowerCase().includes(search)));if(!rows.length)return alert("No inventory records to export.");csv="Product,Barcode,Brand,Category,Unit,Stock,Minimum,Price,Status\n";rows.forEach(p=>csv+=[p.product_name,p.barcode,p.brand,p.category,p.unit,Number(p.stock||0),Number(p.minimum_stock||0),Number(p.price||0).toFixed(2),getStatus(p).text].map(csvEscape).join(",")+"\n");}else{let rows=historyData.filter(h=>isDateInRange(h.created_at,from,to)&&(!search||[h.product_name,h.barcode,h.user_email,h.action].some(v=>String(v||"").toLowerCase().includes(search))));if(!rows.length)return alert("No stock movement records to export.");csv="Date,Product,Barcode,Action,Quantity,Stock Before,Stock After,User\n";rows.forEach(h=>csv+=[h.created_at?new Date(h.created_at).toLocaleString():"",h.product_name,h.barcode,h.action,Number(h.quantity||0),Number(h.stock_before||0),Number(h.stock_after||0),h.user_email].map(csvEscape).join(",")+"\n");}const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a"),d=new Date().toISOString().substring(0,10);a.href=url;a.download=(type==="inventory"?"inventory-report-":"stock-movement-report-")+d+".csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);}
+
+async function saveUserRole(){if(currentRole!=="ADMIN")return alert("ADMIN only.");const uid=document.getElementById("roleUserId").value.trim(),email=document.getElementById("roleUserEmail").value.trim(),role=document.getElementById("roleUserRole").value,msg=document.getElementById("roleMessage");if(!uid||!email)return msg.innerHTML='<span class="error">⚠️ Enter User UID and email.</span>';const {data,error}=await supabaseClient.rpc("admin_set_user_role",{p_user_id:uid,p_email:email,p_role:role});if(error){msg.innerHTML='<span class="error">❌ '+escapeHTML(error.message)+'</span>';return;}msg.innerHTML='<span class="success">✅ '+escapeHTML(data||"Role updated.")+'</span>';await loadRoleList();}
+async function loadRoleList(){if(currentRole!=="ADMIN")return;const list=document.getElementById("roleList");const {data,error}=await supabaseClient.from("user_roles").select("user_id,email,role,created_at").order("created_at",{ascending:true});if(error){list.innerHTML='<div class="error">❌ '+escapeHTML(error.message)+'</div>';return;}list.innerHTML="<strong>👥 Assigned Roles</strong>";(data||[]).forEach(r=>{const d=document.createElement("div");d.style.cssText="border:1px solid #ddd;border-radius:8px;padding:10px;margin-top:8px;font-size:13px";d.innerHTML='<strong>'+escapeHTML(r.email||"-")+'</strong><br>'+escapeHTML(r.role)+'<br><small>'+escapeHTML(r.user_id)+'</small>';list.appendChild(d);});}
+
+function escapeHTML(value){if(value===null||value===undefined)return "";return String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
+</script>
+</body>
+</html>
